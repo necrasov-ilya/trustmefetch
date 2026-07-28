@@ -16,6 +16,7 @@ type Options struct {
 	Frame             int
 	ShowDistroTagline bool
 	HideTagline       bool
+	Question          bool
 }
 
 func Fetch(selected theme.Theme, info system.Info, options Options) string {
@@ -41,10 +42,22 @@ func Fetch(selected theme.Theme, info system.Info, options Options) string {
 	if options.Color {
 		data = append(data, "", colorBar(false), colorBar(true))
 	}
+	proof := questionProof(selected, primary, secondary, accent, options)
 
 	if options.Width < 76 {
 		coloredLogo := colorLogo(logo, selected, options)
-		return strings.Join(append(append(coloredLogo, ""), data...), "\n") + "\n"
+		output := make([]string, 0, len(proof)+len(coloredLogo)+len(data)+2)
+		if len(proof) > 0 {
+			output = append(output, proof...)
+			output = append(output, "")
+		}
+		output = append(output, coloredLogo...)
+		output = append(output, "")
+		output = append(output, data...)
+		return strings.Join(output, "\n") + "\n"
+	}
+	if len(proof) > 0 {
+		data = append(append(proof, ""), data...)
 	}
 
 	leftWidth := 0
@@ -69,6 +82,22 @@ func Fetch(selected theme.Theme, info system.Info, options Options) string {
 		lines = append(lines, left+right)
 	}
 	return strings.Join(lines, "\n") + "\n"
+}
+
+func questionProof(selected theme.Theme, primary, secondary, accent lipgloss.Style, options Options) []string {
+	if !options.Question {
+		return nil
+	}
+	answer := style(selected.Accent, true, options.Color).Render("YES. 100% LINUX!!!!!!")
+	row := func(label, value string) string {
+		return primary.Render(label) + accent.Render(": ") + secondary.Render(value)
+	}
+	return []string{
+		answer,
+		row("Evidence", selected.Distro+" logo detected. "+selected.Desktop+" confirmed."),
+		row("Objection", "Darwin kernel dismissed as a harmless typo."),
+		row("Confidence", "100.00% (independently self-certified)"),
+	}
 }
 
 func wrapLines(lines []string, width int) []string {

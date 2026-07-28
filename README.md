@@ -30,6 +30,7 @@ The installer downloads a checksummed native binary, adds an isolated block to `
 
 ## What you get
 
+- A categorical `YES` backed by completely self-certified Linux evidence
 - Real Mac hardware and system data in a fastfetch-style layout
 - 32 themes with official fastfetch ASCII artwork
 - Animated `100% LINUX!!!!!!` and ten dedicated joke profiles

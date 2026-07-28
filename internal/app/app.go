@@ -29,21 +29,21 @@ func Run(args []string, version string, stdout, stderr io.Writer) error {
 	}
 
 	if len(args) == 0 {
-		return printFetch(cfg, "", stdout)
+		return printFetch(cfg, "", false, stdout)
 	}
 
 	switch args[0] {
 	case "--question":
 		if cfg.Mode == "live" && writerIsTerminal(stdout) {
-			return runLive(cfg, "", stdout)
+			return runLive(cfg, "", true, stdout)
 		}
-		return printFetch(cfg, "", stdout)
+		return printFetch(cfg, "", true, stdout)
 	case "live":
 		id := ""
 		if len(args) > 1 {
 			id = args[1]
 		}
-		return runLive(cfg, id, stdout)
+		return runLive(cfg, id, false, stdout)
 	case "config", "configure":
 		if !writerIsTerminal(stdout) {
 			return errors.New("config requires an interactive terminal")
@@ -98,7 +98,7 @@ func Run(args []string, version string, stdout, stderr io.Writer) error {
 		if len(args) > 1 {
 			id = args[1]
 		}
-		return printFetch(cfg, id, stdout)
+		return printFetch(cfg, id, true, stdout)
 	case "random":
 		items := theme.All()
 		cfg.Theme = items[rand.IntN(len(items))].ID
@@ -106,7 +106,7 @@ func Run(args []string, version string, stdout, stderr io.Writer) error {
 			return err
 		}
 		fmt.Fprintln(stdout, "Reality randomized:", cfg.Theme)
-		return printFetch(cfg, "", stdout)
+		return printFetch(cfg, "", false, stdout)
 	case "doctor":
 		return doctor(stdout)
 	case "version", "--version", "-v":
@@ -120,7 +120,7 @@ func Run(args []string, version string, stdout, stderr io.Writer) error {
 	}
 }
 
-func runLive(cfg config.Config, requested string, stdout io.Writer) error {
+func runLive(cfg config.Config, requested string, question bool, stdout io.Writer) error {
 	if !writerIsTerminal(stdout) {
 		return errors.New("live mode requires an interactive terminal")
 	}
@@ -132,12 +132,12 @@ func runLive(cfg config.Config, requested string, stdout io.Writer) error {
 	if !ok {
 		return fmt.Errorf("unknown theme %q; run trustmefetch themes", id)
 	}
-	program := tea.NewProgram(live.New(system.Collect(), selected, cfg.Animation, cfg.DistroJokes))
+	program := tea.NewProgram(live.New(system.Collect(), selected, cfg.Animation, cfg.DistroJokes, question))
 	_, err := program.Run()
 	return err
 }
 
-func printFetch(cfg config.Config, requested string, stdout io.Writer) error {
+func printFetch(cfg config.Config, requested string, question bool, stdout io.Writer) error {
 	id := cfg.Theme
 	if requested != "" {
 		id = requested
@@ -149,7 +149,7 @@ func printFetch(cfg config.Config, requested string, stdout io.Writer) error {
 	info := system.Collect()
 	color := writerIsTerminal(stdout) && os.Getenv("NO_COLOR") == ""
 	width := terminalWidth(stdout)
-	options := render.Options{Width: width, Color: color, ShowDistroTagline: cfg.DistroJokes}
+	options := render.Options{Width: width, Color: color, ShowDistroTagline: cfg.DistroJokes, Question: question}
 	if selected.Rainbow && cfg.Animation && color {
 		return animate(stdout, selected, info, options)
 	}

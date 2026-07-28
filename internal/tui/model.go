@@ -183,7 +183,7 @@ func (m Model) renderList(width, height int) string {
 func (m Model) renderPreview(width, height int) string {
 	item := m.current()
 	showTagline := item.Joke || m.cfg.DistroJokes
-	content := render.Fetch(item, m.info, render.Options{Width: width - 4, Color: true, Frame: m.frame, HideTagline: true})
+	content := render.Fetch(item, m.info, render.Options{Width: width - 4, Color: true, Frame: m.frame, HideTagline: true, Question: true})
 	lines := strings.Split(strings.TrimRight(content, "\n"), "\n")
 	limit := max(3, height-4)
 	if showTagline {

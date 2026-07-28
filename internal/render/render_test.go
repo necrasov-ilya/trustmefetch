@@ -20,6 +20,28 @@ func TestFetchUsesCollectedValues(t *testing.T) {
 	}
 }
 
+func TestQuestionModeArguesThatMacIsLinux(t *testing.T) {
+	selected := theme.Must("arch-btw")
+	output := Fetch(selected, system.Info{}, Options{Width: 120, Color: false, Question: true})
+	for _, expected := range []string{
+		"YES. 100% LINUX!!!!!!",
+		"Evidence: Arch Linux logo detected. KDE Plasma 6 confirmed.",
+		"Objection: Darwin kernel dismissed as a harmless typo.",
+		"Confidence: 100.00% (independently self-certified)",
+	} {
+		if !strings.Contains(output, expected) {
+			t.Fatalf("question output does not contain %q:\n%s", expected, output)
+		}
+	}
+}
+
+func TestRegularFetchDoesNotContainQuestionProof(t *testing.T) {
+	output := Fetch(theme.Must("arch"), system.Info{}, Options{Width: 120, Color: false})
+	if strings.Contains(output, "100% LINUX") || strings.Contains(output, "independently self-certified") {
+		t.Fatalf("regular fetch contains question proof:\n%s", output)
+	}
+}
+
 func TestDataRowsMatchFastfetchMacOSDefaultModules(t *testing.T) {
 	rows := dataRows(theme.Must("rgb-linux"), system.Info{})
 	labels := make([]string, len(rows))

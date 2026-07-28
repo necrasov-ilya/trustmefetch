@@ -22,6 +22,7 @@ type Model struct {
 	selected    int
 	animation   bool
 	distroJokes bool
+	question    bool
 	paused      bool
 	width       int
 	height      int
@@ -31,7 +32,7 @@ type Model struct {
 	quitting    bool
 }
 
-func New(info system.Info, selected theme.Theme, animation, distroJokes bool) Model {
+func New(info system.Info, selected theme.Theme, animation, distroJokes, question bool) Model {
 	items := theme.All()
 	index := 0
 	for position, item := range items {
@@ -40,7 +41,7 @@ func New(info system.Info, selected theme.Theme, animation, distroJokes bool) Mo
 			break
 		}
 	}
-	return Model{info: info, themes: items, selected: index, animation: animation, distroJokes: distroJokes, width: 100, height: 30, updated: time.Now()}
+	return Model{info: info, themes: items, selected: index, animation: animation, distroJokes: distroJokes, question: question, width: 100, height: 30, updated: time.Now()}
 }
 
 func (m Model) Init() tea.Cmd {
@@ -121,8 +122,12 @@ func (m Model) View() tea.View {
 	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(selected.Primary))
 	dim := lipgloss.NewStyle().Foreground(lipgloss.Color("#64748b"))
 	header := headerStyle.Render("trustmefetch "+status) + dim.Render("  "+selected.Name+"  updated "+m.updated.Format("15:04:05"))
+	if m.question {
+		answer := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(selected.Accent)).Render("YES · 100% LINUX")
+		header = answer + "  " + header
+	}
 
-	content := render.Fetch(selected, m.info, render.Options{Width: max(40, m.width-4), Color: true, Frame: m.frame, ShowDistroTagline: m.distroJokes})
+	content := render.Fetch(selected, m.info, render.Options{Width: max(40, m.width-4), Color: true, Frame: m.frame, ShowDistroTagline: m.distroJokes, Question: m.question})
 	lines := strings.Split(strings.TrimRight(content, "\n"), "\n")
 	available := max(3, m.height-4)
 	end := min(len(lines), m.offset+available)
@@ -141,7 +146,7 @@ func (m Model) current() theme.Theme {
 
 func (m Model) maxOffset() int {
 	selected := m.current()
-	content := render.Fetch(selected, m.info, render.Options{Width: max(40, m.width-4), Color: false, Frame: m.frame, ShowDistroTagline: m.distroJokes})
+	content := render.Fetch(selected, m.info, render.Options{Width: max(40, m.width-4), Color: false, Frame: m.frame, ShowDistroTagline: m.distroJokes, Question: m.question})
 	lines := strings.Split(strings.TrimRight(content, "\n"), "\n")
 	return max(0, len(lines)-max(3, m.height-4))
 }
