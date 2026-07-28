@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"charm.land/lipgloss/v2"
 	"github.com/necrasov-ilya/trustmefetch/internal/system"
 	"github.com/necrasov-ilya/trustmefetch/internal/theme"
 )
@@ -62,12 +63,29 @@ func TestJokeThemeAlwaysShowsTagline(t *testing.T) {
 	}
 }
 
+func TestFetchWrapsInsideRequestedWidth(t *testing.T) {
+	info := system.Info{
+		User: "ada", Hostname: "mac", Resolution: "Color LCD: 3456x2234 (1728 x 1117 @ 120.00Hz) [Built-in]",
+		Font: ".AppleSystemUIFont [System], Helvetica [User]",
+	}
+	const width = 100
+	output := Fetch(theme.Must("rgb-linux"), info, Options{Width: width, Color: false})
+	for index, line := range strings.Split(strings.TrimRight(output, "\n"), "\n") {
+		if got := lipgloss.Width(line); got > width {
+			t.Fatalf("line %d is %d cells wide, want at most %d:\n%s", index+1, got, width, line)
+		}
+	}
+}
+
 func TestEveryThemeRendersWithoutFastfetchMarkers(t *testing.T) {
 	info := system.Info{User: "ada", Hostname: "mac", Host: "Mac42,1", Kernel: "25.0", Arch: "arm64", CPU: "Apple M42", CPUUsage: "42%", GPU: "Apple M42", Memory: "1 / 2 GiB", Disk: "3 / 4 GiB", OSVersion: "26.0", Build: "A1"}
 	for _, selected := range theme.All() {
-		output := Fetch(selected, info, Options{Width: 120, Color: false})
+		output := Fetch(selected, info, Options{Width: 120, Color: false, ShowDistroTagline: true})
 		if strings.Contains(output, "$1") || strings.Contains(output, "$2") || strings.Contains(output, "$3") {
 			t.Fatalf("theme %s leaked fastfetch color markers", selected.ID)
+		}
+		if !strings.Contains(output, selected.Tagline) {
+			t.Fatalf("theme %s did not render its tagline", selected.ID)
 		}
 	}
 }

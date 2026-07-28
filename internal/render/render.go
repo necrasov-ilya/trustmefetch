@@ -15,6 +15,7 @@ type Options struct {
 	Color             bool
 	Frame             int
 	ShowDistroTagline bool
+	HideTagline       bool
 }
 
 func Fetch(selected theme.Theme, info system.Info, options Options) string {
@@ -34,7 +35,7 @@ func Fetch(selected theme.Theme, info system.Info, options Options) string {
 		label := primary.Render(row[0])
 		data = append(data, label+accent.Render(": ")+secondary.Render(row[1]))
 	}
-	if selected.Joke || options.ShowDistroTagline {
+	if !options.HideTagline && (selected.Joke || options.ShowDistroTagline) {
 		data = append(data, "", accent.Render(selected.Tagline))
 	}
 	if options.Color {
@@ -51,6 +52,8 @@ func Fetch(selected theme.Theme, info system.Info, options Options) string {
 		leftWidth = max(leftWidth, lipgloss.Width(stripLogoCodes(line)))
 	}
 	leftWidth += 5
+	rightWidth := max(20, options.Width-leftWidth)
+	data = wrapLines(data, rightWidth)
 	height := max(len(logo), len(data))
 	lines := make([]string, 0, height)
 	for index := 0; index < height; index++ {
@@ -66,6 +69,15 @@ func Fetch(selected theme.Theme, info system.Info, options Options) string {
 		lines = append(lines, left+right)
 	}
 	return strings.Join(lines, "\n") + "\n"
+}
+
+func wrapLines(lines []string, width int) []string {
+	wrapped := make([]string, 0, len(lines))
+	for _, line := range lines {
+		parts := strings.Split(lipgloss.Wrap(line, width, " /,"), "\n")
+		wrapped = append(wrapped, parts...)
+	}
+	return wrapped
 }
 
 func dataRows(selected theme.Theme, info system.Info) [][2]string {

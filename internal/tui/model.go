@@ -182,16 +182,25 @@ func (m Model) renderList(width, height int) string {
 
 func (m Model) renderPreview(width, height int) string {
 	item := m.current()
-	content := render.Fetch(item, m.info, render.Options{Width: width - 4, Color: true, Frame: m.frame, ShowDistroTagline: m.cfg.DistroJokes})
+	showTagline := item.Joke || m.cfg.DistroJokes
+	content := render.Fetch(item, m.info, render.Options{Width: width - 4, Color: true, Frame: m.frame, HideTagline: true})
 	lines := strings.Split(strings.TrimRight(content, "\n"), "\n")
 	limit := max(3, height-4)
+	if showTagline {
+		limit = max(3, limit-2)
+	}
 	if len(lines) > limit {
 		lines = lines[:limit]
 	}
 	label := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(item.Primary)).Render(item.Name)
 	meta := lipgloss.NewStyle().Foreground(lipgloss.Color("#64748b")).Render("  " + item.ID)
+	preview := label + meta + "\n\n" + strings.Join(lines, "\n")
+	if showTagline {
+		tagline := lipgloss.NewStyle().Foreground(lipgloss.Color(item.Accent)).Render(item.Tagline)
+		preview += "\n\n" + tagline
+	}
 	border := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color(item.Primary)).Width(width).Height(height)
-	return border.Padding(0, 1).Render(label + meta + "\n\n" + strings.Join(lines, "\n"))
+	return border.Padding(0, 1).Render(preview)
 }
 
 func (m Model) help() string {
