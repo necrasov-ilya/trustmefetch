@@ -1,55 +1,85 @@
-# trustmefetch
+<p align="center">
+  <img src="../assets/preview.png" alt="trustmefetch" width="100%">
+</p>
 
-`trustmefetch` превращает вопрос `are you a linux?` в цветную системную сводку в духе fastfetch. Программа получает настоящие данные Mac и оформляет их как выбранный дистрибутив Linux.
+<h1 align="center">trustmefetch</h1>
 
-## Возможности
+<p align="center"><strong>Кризис идентичности macOS в стиле fastfetch.</strong><br>Спроси свой Mac, является ли он Linux. Он ответит да.</p>
 
-- 32 встроенные темы
-- 10 шуточных вариантов
-- Переливающаяся тема `100% LINUX!!!!!!`
-- 22 оформления на основе популярных дистрибутивов
-- Полноэкранная настройка с живым предпросмотром
-- Живой экран с обновлением загрузки процессора, памяти, диска, батареи и времени работы
-- Сбор модели Mac, версии системы, ядра, времени работы, оболочки, терминала, процессора, графики, памяти, диска, экрана и батареи
-- Поддержка Apple Silicon и Intel
-- Безопасное повторное выполнение установщика
-- Удаление интеграции из `.zshrc`
+<p align="center">
+  <a href="https://github.com/necrasov-ilya/trustmefetch/releases/latest"><img src="https://img.shields.io/github/v/release/necrasov-ilya/trustmefetch?style=flat-square" alt="Выпуск"></a>
+  <img src="https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-black?style=flat-square" alt="macOS">
+  <a href="../LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="Лицензия MIT"></a>
+</p>
+
+<p align="center"><a href="../README.md">English</a> · <strong>Русский</strong></p>
 
 ## Установка
-
-После публикации первого выпуска:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/necrasov-ilya/trustmefetch/main/install.sh | sh
 ```
 
-Откройте новое окно терминала и выполните:
+Открой новое окно терминала и спроси:
 
 ```zsh
 are you a linux?
 ```
 
-Интерфейс настройки запускается командой:
+Установщик скачивает нативную сборку с проверкой контрольной суммы, добавляет изолированный блок в `.zshrc` и создаёт резервную копию перед изменением файла.
+
+## Возможности
+
+- Настоящие сведения о Mac в оформлении fastfetch
+- 32 темы с оригинальными ASCII-логотипами из каталога fastfetch
+- Переливающаяся тема `100% LINUX!!!!!!` и десять отдельных шуточных профилей
+- Обычный снимок, обновляемый живой режим и полноэкранная настройка
+- Отключаемые шутки сообщества для обычных дистрибутивов
+- Нативные сборки для Apple Silicon и Intel
+
+## Галерея
+
+<table>
+  <tr>
+    <td><img src="../assets/screenshots/arch-btw.png" alt="Тема Arch BTW"></td>
+    <td><img src="../assets/screenshots/ubuntu.png" alt="Тема Ubuntu"></td>
+  </tr>
+  <tr>
+    <td><img src="../assets/screenshots/debian.png" alt="Тема Debian"></td>
+    <td><img src="../assets/screenshots/fedora.png" alt="Тема Fedora"></td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="../assets/screenshots/nixos.png" alt="Тема NixOS"></td>
+  </tr>
+</table>
+
+## Использование
 
 ```sh
-trustmefetch config
+trustmefetch config          # интерактивная настройка
+trustmefetch                 # вывести снимок и завершиться
+trustmefetch live            # обновляемый полноэкранный режим
+trustmefetch themes          # показать все темы
+trustmefetch theme arch-btw  # выбрать тему
+trustmefetch jokes on        # включить или выключить подписи
+trustmefetch mode live       # живой режим или снимок для вопроса
+trustmefetch doctor          # проверить установку
 ```
 
-Также доступны команды:
+В настройщике используй стрелки или `j`/`k` для навигации, `d` для подписей, `a` для анимации, `m` для режима вопроса и `Enter` для сохранения. Выход выполняется клавишей `q`.
+
+## Удаление
 
 ```sh
-trustmefetch themes
-trustmefetch theme arch-btw
-trustmefetch preview rgb-linux
-trustmefetch live
-trustmefetch mode live
-trustmefetch random
-trustmefetch doctor
+~/.local/share/trustmefetch/uninstall.sh
 ```
 
-Обычная команда `trustmefetch` работает как fastfetch: печатает снимок и возвращает приглашение оболочки. Команда `trustmefetch live` остаётся открытой и обновляет показатели до нажатия `q`. Поведение вопроса выбирается через `trustmefetch mode snapshot` или `trustmefetch mode live`. В интерфейсе настройки режим переключается клавишей `m`.
+Параметр `--purge` также удалит конфигурацию.
 
-## Локальная разработка
+<details>
+<summary>Сборка из исходников</summary>
+
+Потребуется Go 1.25 или новее.
 
 ```sh
 git clone https://github.com/necrasov-ilya/trustmefetch.git
@@ -57,5 +87,10 @@ cd trustmefetch
 make test
 make install
 ```
+</details>
 
-Проект распространяется по лицензии MIT. ASCII-логотипы дистрибутивов взяты из официального каталога fastfetch на условиях MIT с сохранением уведомления об авторских правах. Названия и знаки дистрибутивов принадлежат их правообладателям. Проект не связан с Apple, KDE, fastfetch и разработчиками дистрибутивов Linux.
+## Благодарности
+
+Логотипы дистрибутивов взяты из каталога [fastfetch](https://github.com/fastfetch-cli/fastfetch) на условиях MIT. Подробности находятся в [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md). Названия и знаки дистрибутивов принадлежат их правообладателям. Проект не связан с Apple, KDE, fastfetch и разработчиками дистрибутивов Linux.
+
+MIT © [NKSV_ILYA](https://github.com/necrasov-ilya)
