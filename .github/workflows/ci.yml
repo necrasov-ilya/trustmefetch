@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: gofmt -l cmd internal | tee /tmp/gofmt.txt && test ! -s /tmp/gofmt.txt
+      - run: go vet ./...
+      - run: go test -race ./...
+      - run: go build ./cmd/trustmefetch
+

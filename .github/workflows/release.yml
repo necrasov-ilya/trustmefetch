@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [arm64, amd64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build archive
+        env:
+          GOOS: darwin
+          GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: 0
+        run: |
+          archive_arch="$GOARCH"
+          if [ "$archive_arch" = "amd64" ]; then archive_arch="x86_64"; fi
+          mkdir -p package
+          go build -trimpath -ldflags "-s -w -X main.version=${GITHUB_REF_NAME}" -o package/trustmefetch ./cmd/trustmefetch
+          cp shell/trustmefetch.zsh uninstall.sh README.md LICENSE package/
+          tar -czf "trustmefetch_Darwin_${archive_arch}.tar.gz" -C package trustmefetch trustmefetch.zsh uninstall.sh README.md LICENSE
+          shasum -a 256 "trustmefetch_Darwin_${archive_arch}.tar.gz" > "trustmefetch_Darwin_${archive_arch}.tar.gz.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trustmefetch-${{ matrix.arch }}
+          path: trustmefetch_Darwin_*
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: trustmefetch-*
+          merge-multiple: true
+          path: dist
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --generate-notes --verify-tag
