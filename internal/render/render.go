@@ -11,9 +11,10 @@ import (
 )
 
 type Options struct {
-	Width int
-	Color bool
-	Frame int
+	Width             int
+	Color             bool
+	Frame             int
+	ShowDistroTagline bool
 }
 
 func Fetch(selected theme.Theme, info system.Info, options Options) string {
@@ -32,6 +33,9 @@ func Fetch(selected theme.Theme, info system.Info, options Options) string {
 	for _, row := range rows {
 		label := primary.Render(row[0])
 		data = append(data, label+accent.Render(": ")+secondary.Render(row[1]))
+	}
+	if selected.Joke || options.ShowDistroTagline {
+		data = append(data, "", accent.Render(selected.Tagline))
 	}
 	if options.Color {
 		data = append(data, "", colorBar(false), colorBar(true))

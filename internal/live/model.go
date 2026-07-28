@@ -17,20 +17,21 @@ type animationMsg time.Time
 type statsMsg system.Info
 
 type Model struct {
-	info      system.Info
-	themes    []theme.Theme
-	selected  int
-	animation bool
-	paused    bool
-	width     int
-	height    int
-	offset    int
-	frame     int
-	updated   time.Time
-	quitting  bool
+	info        system.Info
+	themes      []theme.Theme
+	selected    int
+	animation   bool
+	distroJokes bool
+	paused      bool
+	width       int
+	height      int
+	offset      int
+	frame       int
+	updated     time.Time
+	quitting    bool
 }
 
-func New(info system.Info, selected theme.Theme, animation bool) Model {
+func New(info system.Info, selected theme.Theme, animation, distroJokes bool) Model {
 	items := theme.All()
 	index := 0
 	for position, item := range items {
@@ -39,7 +40,7 @@ func New(info system.Info, selected theme.Theme, animation bool) Model {
 			break
 		}
 	}
-	return Model{info: info, themes: items, selected: index, animation: animation, width: 100, height: 30, updated: time.Now()}
+	return Model{info: info, themes: items, selected: index, animation: animation, distroJokes: distroJokes, width: 100, height: 30, updated: time.Now()}
 }
 
 func (m Model) Init() tea.Cmd {
@@ -121,7 +122,7 @@ func (m Model) View() tea.View {
 	dim := lipgloss.NewStyle().Foreground(lipgloss.Color("#64748b"))
 	header := headerStyle.Render("trustmefetch "+status) + dim.Render("  "+selected.Name+"  updated "+m.updated.Format("15:04:05"))
 
-	content := render.Fetch(selected, m.info, render.Options{Width: max(40, m.width-4), Color: true, Frame: m.frame})
+	content := render.Fetch(selected, m.info, render.Options{Width: max(40, m.width-4), Color: true, Frame: m.frame, ShowDistroTagline: m.distroJokes})
 	lines := strings.Split(strings.TrimRight(content, "\n"), "\n")
 	available := max(3, m.height-4)
 	end := min(len(lines), m.offset+available)
@@ -140,7 +141,7 @@ func (m Model) current() theme.Theme {
 
 func (m Model) maxOffset() int {
 	selected := m.current()
-	content := render.Fetch(selected, m.info, render.Options{Width: max(40, m.width-4), Color: false, Frame: m.frame})
+	content := render.Fetch(selected, m.info, render.Options{Width: max(40, m.width-4), Color: false, Frame: m.frame, ShowDistroTagline: m.distroJokes})
 	lines := strings.Split(strings.TrimRight(content, "\n"), "\n")
 	return max(0, len(lines)-max(3, m.height-4))
 }

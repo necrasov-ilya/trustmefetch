@@ -83,6 +83,16 @@ func Run(args []string, version string, stdout, stderr io.Writer) error {
 		}
 		fmt.Fprintln(stdout, "Question mode saved:", cfg.Mode)
 		return nil
+	case "jokes":
+		if len(args) != 2 || (args[1] != "on" && args[1] != "off") {
+			return errors.New("usage: trustmefetch jokes <on|off>")
+		}
+		cfg.DistroJokes = args[1] == "on"
+		if err := config.Save(cfg); err != nil {
+			return err
+		}
+		fmt.Fprintln(stdout, "Distro jokes saved:", args[1])
+		return nil
 	case "preview":
 		id := cfg.Theme
 		if len(args) > 1 {
@@ -122,7 +132,7 @@ func runLive(cfg config.Config, requested string, stdout io.Writer) error {
 	if !ok {
 		return fmt.Errorf("unknown theme %q; run trustmefetch themes", id)
 	}
-	program := tea.NewProgram(live.New(system.Collect(), selected, cfg.Animation))
+	program := tea.NewProgram(live.New(system.Collect(), selected, cfg.Animation, cfg.DistroJokes))
 	_, err := program.Run()
 	return err
 }
@@ -139,7 +149,7 @@ func printFetch(cfg config.Config, requested string, stdout io.Writer) error {
 	info := system.Collect()
 	color := writerIsTerminal(stdout) && os.Getenv("NO_COLOR") == ""
 	width := terminalWidth(stdout)
-	options := render.Options{Width: width, Color: color}
+	options := render.Options{Width: width, Color: color, ShowDistroTagline: cfg.DistroJokes}
 	if selected.Rainbow && cfg.Animation && color {
 		return animate(stdout, selected, info, options)
 	}
@@ -220,6 +230,7 @@ Usage:
   trustmefetch themes             List all themes
   trustmefetch theme <id>         Save a theme
   trustmefetch mode <mode>        Set question mode: snapshot or live
+  trustmefetch jokes <on|off>     Toggle jokes for distro themes
   trustmefetch preview [id]       Preview a theme
   trustmefetch random             Pick and save a random theme
   trustmefetch doctor             Inspect the installation

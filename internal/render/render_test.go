@@ -36,9 +36,29 @@ func TestDataRowsMatchFastfetchMacOSDefaultModules(t *testing.T) {
 }
 
 func TestColoredFetchHasFastfetchDefaultLineCount(t *testing.T) {
-	output := Fetch(theme.Must("rgb-linux"), system.Info{}, Options{Width: 200, Color: true})
+	output := Fetch(theme.Must("arch"), system.Info{}, Options{Width: 200, Color: true, ShowDistroTagline: false})
 	if got, want := strings.Count(output, "\n"), 27; got != want {
 		t.Fatalf("got %d output lines, want %d", got, want)
+	}
+}
+
+func TestDistroTaglineCanBeToggled(t *testing.T) {
+	selected := theme.Must("ubuntu")
+	hidden := Fetch(selected, system.Info{}, Options{Width: 200, Color: false})
+	shown := Fetch(selected, system.Info{}, Options{Width: 200, Color: false, ShowDistroTagline: true})
+	if strings.Contains(hidden, selected.Tagline) {
+		t.Fatal("distro tagline is visible while disabled")
+	}
+	if !strings.Contains(shown, selected.Tagline) {
+		t.Fatal("distro tagline is missing while enabled")
+	}
+}
+
+func TestJokeThemeAlwaysShowsTagline(t *testing.T) {
+	selected := theme.Must("rgb-linux")
+	output := Fetch(selected, system.Info{}, Options{Width: 200, Color: false})
+	if !strings.Contains(output, selected.Tagline) {
+		t.Fatal("joke theme tagline is missing")
 	}
 }
 

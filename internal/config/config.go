@@ -11,13 +11,14 @@ const DefaultTheme = "trust-me-bro"
 const DefaultMode = "snapshot"
 
 type Config struct {
-	Theme     string `json:"theme"`
-	Animation bool   `json:"animation"`
-	Mode      string `json:"mode"`
+	Theme       string `json:"theme"`
+	Animation   bool   `json:"animation"`
+	Mode        string `json:"mode"`
+	DistroJokes bool   `json:"distro_jokes"`
 }
 
 func Default() Config {
-	return Config{Theme: DefaultTheme, Animation: true, Mode: DefaultMode}
+	return Config{Theme: DefaultTheme, Animation: true, Mode: DefaultMode, DistroJokes: true}
 }
 
 func Path() (string, error) {

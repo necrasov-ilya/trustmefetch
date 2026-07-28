@@ -97,6 +97,10 @@ func (m Model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.status = "Question mode: " + m.cfg.Mode
 			m.refreshDirty()
+		case "d":
+			m.cfg.DistroJokes = !m.cfg.DistroJokes
+			m.status = fmt.Sprintf("Distro jokes: %s", onOff(m.cfg.DistroJokes))
+			m.refreshDirty()
 		case "enter", "s":
 			m.cfg.Theme = m.current().ID
 			if err := config.Save(m.cfg); err != nil {
@@ -127,9 +131,13 @@ func (m Model) renderView() string {
 	title := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#a78bfa")).Render("trustmefetch config")
 	subtitle := lipgloss.NewStyle().Foreground(lipgloss.Color("#94a3b8")).Render("Choose the Linux your Mac believes it is today")
 	mode := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#22d3ee")).Render("question: " + m.cfg.Mode)
-	header := title + "  " + subtitle + "  " + mode
+	jokes := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#f59e0b")).Render("distro jokes: " + onOff(m.cfg.DistroJokes))
+	header := title + "  " + subtitle + "  " + mode + "  " + jokes
+	if m.width < 110 {
+		header = title + "\n" + subtitle + "\n" + mode + "  " + jokes
+	}
 
-	if m.width < 70 {
+	if m.width < 100 {
 		panelWidth := max(30, m.width-6)
 		panelHeight := max(7, (m.height-8)/2)
 		body := m.renderList(panelWidth, panelHeight) + "\n" + m.renderPreview(panelWidth, panelHeight)
@@ -174,7 +182,7 @@ func (m Model) renderList(width, height int) string {
 
 func (m Model) renderPreview(width, height int) string {
 	item := m.current()
-	content := render.Fetch(item, m.info, render.Options{Width: width - 4, Color: true, Frame: m.frame})
+	content := render.Fetch(item, m.info, render.Options{Width: width - 4, Color: true, Frame: m.frame, ShowDistroTagline: m.cfg.DistroJokes})
 	lines := strings.Split(strings.TrimRight(content, "\n"), "\n")
 	limit := max(3, height-4)
 	if len(lines) > limit {
@@ -187,7 +195,10 @@ func (m Model) renderPreview(width, height int) string {
 }
 
 func (m Model) help() string {
-	help := "↑/↓ navigate  enter/s save  r random  a animation  m question mode  q quit"
+	help := "↑/↓ navigate  enter/s save  r random  a animation  m question mode  d distro jokes  q quit"
+	if m.width < 100 {
+		help = "↑/↓ navigate  enter/s save  r random  q quit\na animation  m question mode  d distro jokes"
+	}
 	if m.status != "" {
 		help += "   • " + m.status
 	} else if m.dirty {
@@ -204,7 +215,7 @@ func (m *Model) move(delta int) {
 }
 
 func (m *Model) refreshDirty() {
-	m.dirty = m.saved.Theme != m.current().ID || m.saved.Animation != m.cfg.Animation || m.saved.Mode != m.cfg.Mode
+	m.dirty = m.saved.Theme != m.current().ID || m.saved.Animation != m.cfg.Animation || m.saved.Mode != m.cfg.Mode || m.saved.DistroJokes != m.cfg.DistroJokes
 }
 
 func (m *Model) clampOffset() {
@@ -219,7 +230,7 @@ func (m *Model) clampOffset() {
 }
 
 func (m Model) visibleRows() int {
-	if m.width < 70 {
+	if m.width < 100 {
 		return max(3, max(7, (m.height-8)/2)-4)
 	}
 	return max(8, m.panelHeight()-4)

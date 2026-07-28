@@ -68,10 +68,12 @@ trustmefetch themes
 trustmefetch theme arch-btw
 trustmefetch preview rgb-linux
 trustmefetch random
+trustmefetch jokes on
+trustmefetch jokes off
 trustmefetch doctor
 ```
 
-Inside the picker, use arrow keys or `j` and `k` to move, `Enter` or `s` to save, `r` for a random theme, `a` to toggle animation, and `q` to quit.
+Inside the picker, use arrow keys or `j` and `k` to move, `Enter` or `s` to save, `r` for a random theme, `a` to toggle animation, `m` to choose the question mode, `d` to toggle taglines for distro themes, and `q` to quit. Joke themes always keep their taglines.
 
 ## Snapshot and live modes
 
