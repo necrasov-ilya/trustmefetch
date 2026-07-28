@@ -37,7 +37,20 @@ The installer downloads a checksummed native binary, adds an isolated block to `
 - Optional community jokes for the regular distro themes
 - Native Apple Silicon and Intel builds
 
-## Gallery
+## Demo
+
+### Ask the question
+
+<p align="center"><img src="assets/demos/question.gif" alt="Running are you a linux and switching live themes" width="100%"></p>
+
+### Pick a personality
+
+<p align="center"><img src="assets/demos/config.gif" alt="Choosing a theme in the trustmefetch configurator" width="100%"></p>
+
+<details>
+<summary>More screenshots</summary>
+
+<br>
 
 <table>
   <tr>
@@ -52,6 +65,8 @@ The installer downloads a checksummed native binary, adds an isolated block to `
     <td colspan="2"><img src="assets/screenshots/nixos.png" alt="NixOS theme"></td>
   </tr>
 </table>
+
+</details>
 
 ## Use
 

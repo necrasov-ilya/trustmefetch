@@ -37,7 +37,20 @@ are you a linux?
 - Отключаемые шутки сообщества для обычных дистрибутивов
 - Нативные сборки для Apple Silicon и Intel
 
-## Галерея
+## Демонстрация
+
+### Задаём вопрос
+
+<p align="center"><img src="../assets/demos/question.gif" alt="Запуск are you a linux и смена тем" width="100%"></p>
+
+### Выбираем личность
+
+<p align="center"><img src="../assets/demos/config.gif" alt="Выбор темы в настройщике trustmefetch" width="100%"></p>
+
+<details>
+<summary>Больше скриншотов</summary>
+
+<br>
 
 <table>
   <tr>
@@ -52,6 +65,8 @@ are you a linux?
     <td colspan="2"><img src="../assets/screenshots/nixos.png" alt="Тема NixOS"></td>
   </tr>
 </table>
+
+</details>
 
 ## Использование
 
