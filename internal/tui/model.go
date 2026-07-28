@@ -20,6 +20,7 @@ type Model struct {
 	items    []theme.Theme
 	info     system.Info
 	cfg      config.Config
+	saved    config.Config
 	cursor   int
 	offset   int
 	width    int
@@ -39,7 +40,7 @@ func New(info system.Info, cfg config.Config) Model {
 			break
 		}
 	}
-	return Model{items: items, info: info, cfg: cfg, cursor: cursor, width: 110, height: 32}
+	return Model{items: items, info: info, cfg: cfg, saved: cfg, cursor: cursor, width: 110, height: 32}
 }
 
 func (m Model) Init() tea.Cmd {
@@ -87,13 +88,22 @@ func (m Model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		case "a":
 			m.cfg.Animation = !m.cfg.Animation
 			m.status = fmt.Sprintf("Animation: %s", onOff(m.cfg.Animation))
-			m.dirty = true
+			m.refreshDirty()
+		case "m":
+			if m.cfg.Mode == "live" {
+				m.cfg.Mode = "snapshot"
+			} else {
+				m.cfg.Mode = "live"
+			}
+			m.status = "Question mode: " + m.cfg.Mode
+			m.refreshDirty()
 		case "enter", "s":
 			m.cfg.Theme = m.current().ID
 			if err := config.Save(m.cfg); err != nil {
 				m.status = "Save failed: " + err.Error()
 			} else {
 				m.status = "Saved " + m.current().ID
+				m.saved = m.cfg
 				m.dirty = false
 			}
 		}
@@ -116,25 +126,30 @@ func (m Model) renderView() string {
 	background := lipgloss.NewStyle().Padding(1, 2)
 	title := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#a78bfa")).Render("trustmefetch config")
 	subtitle := lipgloss.NewStyle().Foreground(lipgloss.Color("#94a3b8")).Render("Choose the Linux your Mac believes it is today")
-	header := title + "  " + subtitle
+	mode := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#22d3ee")).Render("question: " + m.cfg.Mode)
+	header := title + "  " + subtitle + "  " + mode
 
 	if m.width < 70 {
-		body := m.renderList(max(30, m.width-6)) + "\n\n" + m.renderPreview(max(42, m.width-6))
+		panelWidth := max(30, m.width-6)
+		panelHeight := max(7, (m.height-8)/2)
+		body := m.renderList(panelWidth, panelHeight) + "\n" + m.renderPreview(panelWidth, panelHeight)
 		return background.Render(header + "\n\n" + body + "\n" + m.help())
 	}
+	layoutWidth := min(144, m.width-4)
 	listWidth := 34
-	if m.width < 100 {
+	if layoutWidth < 100 {
 		listWidth = 25
 	}
-	previewWidth := max(48, m.width-listWidth-10)
-	left := m.renderList(listWidth)
-	right := m.renderPreview(previewWidth)
+	previewWidth := max(48, layoutWidth-listWidth-3)
+	panelHeight := m.panelHeight()
+	left := m.renderList(listWidth, panelHeight)
+	right := m.renderPreview(previewWidth, panelHeight)
 	body := lipgloss.JoinHorizontal(lipgloss.Top, left, "   ", right)
 	return background.Render(header + "\n\n" + body + "\n" + m.help())
 }
 
-func (m Model) renderList(width int) string {
-	border := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("#475569")).Width(width)
+func (m Model) renderList(width, height int) string {
+	border := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("#475569")).Width(width).Height(height)
 	selected := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#0f172a")).Background(lipgloss.Color("#a78bfa"))
 	normal := lipgloss.NewStyle().Foreground(lipgloss.Color("#cbd5e1"))
 	dim := lipgloss.NewStyle().Foreground(lipgloss.Color("#64748b"))
@@ -157,22 +172,22 @@ func (m Model) renderList(width int) string {
 	return border.Padding(0, 1).Render(strings.Join(rows, "\n"))
 }
 
-func (m Model) renderPreview(width int) string {
+func (m Model) renderPreview(width, height int) string {
 	item := m.current()
 	content := render.Fetch(item, m.info, render.Options{Width: width - 4, Color: true, Frame: m.frame})
 	lines := strings.Split(strings.TrimRight(content, "\n"), "\n")
-	limit := max(10, m.height-10)
+	limit := max(3, height-4)
 	if len(lines) > limit {
 		lines = lines[:limit]
 	}
 	label := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(item.Primary)).Render(item.Name)
 	meta := lipgloss.NewStyle().Foreground(lipgloss.Color("#64748b")).Render("  " + item.ID)
-	border := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color(item.Primary)).Width(width)
+	border := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color(item.Primary)).Width(width).Height(height)
 	return border.Padding(0, 1).Render(label + meta + "\n\n" + strings.Join(lines, "\n"))
 }
 
 func (m Model) help() string {
-	help := "↑/↓ navigate  enter/s save  r random  a animation  q quit"
+	help := "↑/↓ navigate  enter/s save  r random  a animation  m question mode  q quit"
 	if m.status != "" {
 		help += "   • " + m.status
 	} else if m.dirty {
@@ -183,9 +198,13 @@ func (m Model) help() string {
 
 func (m *Model) move(delta int) {
 	m.cursor = max(0, min(len(m.items)-1, m.cursor+delta))
-	m.dirty = m.cfg.Theme != m.current().ID
+	m.refreshDirty()
 	m.status = ""
 	m.clampOffset()
+}
+
+func (m *Model) refreshDirty() {
+	m.dirty = m.saved.Theme != m.current().ID || m.saved.Animation != m.cfg.Animation || m.saved.Mode != m.cfg.Mode
 }
 
 func (m *Model) clampOffset() {
@@ -201,9 +220,13 @@ func (m *Model) clampOffset() {
 
 func (m Model) visibleRows() int {
 	if m.width < 70 {
-		return max(5, min(8, (m.height-12)/2))
+		return max(3, max(7, (m.height-8)/2)-4)
 	}
-	return max(8, min(24, m.height-11))
+	return max(8, m.panelHeight()-4)
+}
+
+func (m Model) panelHeight() int {
+	return max(14, min(28, m.height-7))
 }
 
 func (m Model) current() theme.Theme {

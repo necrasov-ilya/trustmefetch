@@ -29,8 +29,8 @@ jobs:
           if [ "$archive_arch" = "amd64" ]; then archive_arch="x86_64"; fi
           mkdir -p package
           go build -trimpath -ldflags "-s -w -X main.version=${GITHUB_REF_NAME}" -o package/trustmefetch ./cmd/trustmefetch
-          cp shell/trustmefetch.zsh uninstall.sh README.md LICENSE package/
-          tar -czf "trustmefetch_Darwin_${archive_arch}.tar.gz" -C package trustmefetch trustmefetch.zsh uninstall.sh README.md LICENSE
+          cp shell/trustmefetch.zsh uninstall.sh README.md LICENSE THIRD_PARTY_NOTICES.md package/
+          tar -czf "trustmefetch_Darwin_${archive_arch}.tar.gz" -C package trustmefetch trustmefetch.zsh uninstall.sh README.md LICENSE THIRD_PARTY_NOTICES.md
           shasum -a 256 "trustmefetch_Darwin_${archive_arch}.tar.gz" > "trustmefetch_Darwin_${archive_arch}.tar.gz.sha256"
       - uses: actions/upload-artifact@v4
         with:

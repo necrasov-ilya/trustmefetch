@@ -5,30 +5,29 @@
 `trustmefetch` collects real information from your Mac, dresses it as one of 32 Linux personalities, and answers the only question that matters:
 
 ```console
-$ you are a linux?
+$ are you a linux?
 
-       .--.        ilya@MacBook-Pro
-      |o_o |       ─────────────────
-      |:_/ |       OS         : TrustMe Linux arm64
-     //   \ \      Host       : MacBookPro18,2
-    (|     | )     Kernel     : Darwin 25.5.0
-   /'\_   _/\      Desktop    : KDE Plasma 6
-   \___)=(___/     Verdict    : yes. trust me.
-
-                   Trust me, it's Linux.
+                  -`                     ilya@MacBook-Pro
+                 .o+`                    -----------------
+                `ooo/                    OS: Arch Linux arm64
+               `+oooo:                   Host: MacBookPro18,2
+              `+oooooo:                  Kernel: Darwin 25.5.0
+              -+oooooo+:                 Desktop: KDE Plasma 6
+            `/:-:++oooo+:                Verdict: yes. trust me.
 ```
 
 The host, OS build, kernel, uptime, package count, shell, terminal, display, CPU, GPU, memory, disk, and battery values come from the current machine. The selected distro, desktop, logo, palette, and questionable confidence are the joke.
 
 ## Features
 
-- 32 built-in themes with original terminal-sized ASCII artwork
+- 32 built-in themes
 - Ten joke profiles, including animated `100% LINUX!!!!!!`
-- 22 familiar distro profiles inspired by conventional fetch tools
+- 22 distro profiles using the official fastfetch ASCII logo catalog
 - Full-screen theme picker with live preview
+- Full-screen live view with periodically refreshed CPU, memory, disk, battery, and uptime values
 - Real macOS system discovery without hardcoded hardware values
 - True-color output with a readable no-color fallback
-- Exact zsh phrase `you are a linux?`
+- Exact zsh phrase `are you a linux?`
 - Native Apple Silicon and Intel binaries
 - Idempotent installer and removable shell integration
 
@@ -43,7 +42,7 @@ curl -fsSL https://raw.githubusercontent.com/necrasov-ilya/trustmefetch/main/ins
 Open a new terminal and ask:
 
 ```zsh
-you are a linux?
+are you a linux?
 ```
 
 To inspect the installer before running it:
@@ -73,6 +72,29 @@ trustmefetch doctor
 ```
 
 Inside the picker, use arrow keys or `j` and `k` to move, `Enter` or `s` to save, `r` for a random theme, `a` to toggle animation, and `q` to quit.
+
+## Snapshot and live modes
+
+Like fastfetch, the regular command prints a snapshot and returns to the shell:
+
+```sh
+trustmefetch
+```
+
+The live view stays open and refreshes system values until `q` is pressed:
+
+```sh
+trustmefetch live
+```
+
+Choose what the question opens:
+
+```sh
+trustmefetch mode snapshot
+trustmefetch mode live
+```
+
+The same setting is available inside `trustmefetch config` with the `m` key. In live mode, use `Space` to pause, `r` to refresh, `t` to switch themes, arrow keys to scroll, and `q` to exit.
 
 ## Build locally
 
@@ -107,7 +129,7 @@ The installer creates a backup before modifying `.zshrc`. The uninstaller also m
 
 The catalog includes `rgb-linux`, `seriously-linux`, `trust-me-bro`, `arch-btw`, `kde-delusion`, `sudo-believe`, `kernel-of-truth`, `macos-who`, `penguin-certified`, `retina-wayland`, Arch, Ubuntu, Debian, Fedora, NixOS, Alpine, Manjaro, EndeavourOS, openSUSE, Gentoo, Kali, Linux Mint, Pop!_OS, elementary OS, Void, Slackware, Rocky Linux, AlmaLinux, CentOS Stream, Garuda, CachyOS, and KDE neon.
 
-The distro names and marks belong to their respective owners. This project is not affiliated with Apple, KDE, fastfetch, or any Linux distribution.
+The distro names and marks belong to their respective owners. This project is not affiliated with Apple, KDE, fastfetch, or any Linux distribution. The bundled distro ASCII artwork comes from fastfetch under the MIT License. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## License
 

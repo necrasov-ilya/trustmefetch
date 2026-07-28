@@ -28,6 +28,7 @@ type Info struct {
 	Shell      string
 	Terminal   string
 	CPU        string
+	CPUUsage   string
 	GPU        string
 	Memory     string
 	Disk       string
@@ -49,6 +50,7 @@ func Collect() Info {
 		Shell:     shell(),
 		Terminal:  terminal(),
 		CPU:       sysctl("machdep.cpu.brand_string"),
+		CPUUsage:  cpuUsage(),
 		Memory:    memory(),
 		Disk:      disk(),
 		Battery:   battery(),
@@ -60,6 +62,15 @@ func Collect() Info {
 	if info.Host == "" {
 		info.Host = "Apple computer"
 	}
+	return info
+}
+
+func CollectDynamic(info Info) Info {
+	info.Uptime = uptime()
+	info.CPUUsage = cpuUsage()
+	info.Memory = memory()
+	info.Disk = disk()
+	info.Battery = battery()
 	return info
 }
 
@@ -154,7 +165,31 @@ func packages() string {
 	}
 	formulae := lines(command("brew", "list", "--formula"))
 	casks := lines(command("brew", "list", "--cask"))
-	return fmt.Sprintf("%d (brew)", formulae+casks)
+	if casks == 0 {
+		return fmt.Sprintf("%d (brew)", formulae)
+	}
+	return fmt.Sprintf("%d (brew), %d (brew-cask)", formulae, casks)
+}
+
+func cpuUsage() string {
+	raw := command("ps", "-A", "-o", "%cpu=")
+	if raw == "" {
+		return "unknown"
+	}
+	total := 0.0
+	for _, field := range strings.Fields(raw) {
+		value, err := strconv.ParseFloat(field, 64)
+		if err == nil {
+			total += value
+		}
+	}
+	if cores := runtime.NumCPU(); cores > 0 {
+		total /= float64(cores)
+	}
+	if total > 100 {
+		total = 100
+	}
+	return fmt.Sprintf("%.1f%%", total)
 }
 
 func lines(value string) int {

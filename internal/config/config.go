@@ -8,14 +8,16 @@ import (
 )
 
 const DefaultTheme = "trust-me-bro"
+const DefaultMode = "snapshot"
 
 type Config struct {
 	Theme     string `json:"theme"`
 	Animation bool   `json:"animation"`
+	Mode      string `json:"mode"`
 }
 
 func Default() Config {
-	return Config{Theme: DefaultTheme, Animation: true}
+	return Config{Theme: DefaultTheme, Animation: true, Mode: DefaultMode}
 }
 
 func Path() (string, error) {
@@ -45,6 +47,9 @@ func Load() (Config, error) {
 	}
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return Default(), err
+	}
+	if cfg.Mode == "" {
+		cfg.Mode = DefaultMode
 	}
 	return cfg, nil
 }

@@ -8,7 +8,7 @@ import (
 
 func TestRoundTrip(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	want := Config{Theme: "rgb-linux", Animation: false}
+	want := Config{Theme: "rgb-linux", Animation: false, Mode: "live"}
 	if err := Save(want); err != nil {
 		t.Fatal(err)
 	}

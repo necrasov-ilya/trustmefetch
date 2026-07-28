@@ -1,8 +1,17 @@
 package theme
 
-import "strings"
+import (
+	"embed"
+	"strings"
+)
 
-var logos = map[string]string{
+// The distro artwork in ascii/ comes from fastfetch and is distributed under
+// its MIT license. See THIRD_PARTY_NOTICES.md at the repository root.
+//
+//go:embed ascii/*.txt
+var logoFiles embed.FS
+
+var customLogos = map[string]string{
 	"linux": `        ___
     .--'   '--.
    /  100%     \
@@ -10,27 +19,6 @@ var logos = map[string]string{
   |  .------.   |
    \ '------'  /
     '--.____.--'`,
-	"tux": `       .--.
-      |o_o |
-      |:_/ |
-     //   \ \
-    (|     | )
-   /'\_   _/\
-   \___)=(___/`,
-	"arch": `        /\
-       /  \
-      /\   \
-     /      \
-    /   ,,   \
-   /   |  |  -\
-  /_-''    ''-_\`,
-	"kde": `      .--------.
-     /  .----.  \
-    /  /  __  \  \
-   |  |  / /  |  |
-   |  | / /_  |  |
-    \  \\___/ /  /
-     '---KDE---'`,
 	"sudo": `   ┌─────────────┐
    │ $ sudo      │
    │   believe   │
@@ -51,152 +39,19 @@ var logos = map[string]string{
       V  V
     WAYLAND
    PRO MAX`,
-	"ubuntu": `        .-.
-    .-'   '-.
-   /   .-.   \
-  |   (   )   |
-   \   ` + "`" + `-'   /
-    '-.   .-'
-       ` + "`" + `-'`,
-	"debian": `       _____
-    .-'     '-.
-   /  .-'''-.  \
-  |  /  _    \  |
-  |  \ (_)   /  |
-   \  '-...-'  /
-    '-._____.-'`,
-	"fedora": `      _______
-    /  _____  \
-   /  /  __/  /
-  |  |  /    /
-  |  | /  __/
-   \  /  /
-    \/__/`,
-	"nixos": `       \  \
-    == \  \ ==
-   \ \  \ / /
-  ===  > * <  ===
-   / /  / \ \
-    == /  / ==
-      /  /`,
-	"alpine": `        /\
-       /  \
-      / /\ \
-     / /  \ \
-    / / /\ \ \
-   /  /  \  \
-  /__/____\__\`,
-	"manjaro": `  ██████  ██████
-  ██████  ██████
-  ██████  ██████
-  ██████  ██████
-  ██████  ██████
-  ██████  ██████
-  ██████  ██████`,
-	"endeavour": `          /\
-         /  \
-        / /\ \
-       / /  \ \
-      / / /\ \ \
-     /_/_/  \_\_\
-       ENDEAVOUR`,
-	"opensuse": `       ______
-    .-'      '-.
-   /   .----.   \
-  |   /  ()  \   |
-  |   \      /   |
-   \   '----'   /
-    '-.______.-'`,
-	"gentoo": `       .----.
-    .-'      '-.
-   /   .--.     \
-  |   /    \     |
-  |   \    /    /
-   \   '--'  .-'
-    '------'`,
-	"kali": `        /\
-   ____/  \____
-  /            \__
-  \__    _        \
-     \__/ \__  __/
-             \/
-        KALI`,
-	"mint": `   ____________
-  /            \
- |   LM         |
- |   ┌──────┐   |
- |   │      │   |
- |   └──────┘   |
-  \____________/`,
-	"popos": `     _________
-   /  _______  \
-  |  |       |  |
-  |  |  POP! |  |
-  |  |_______|  |
-   \____  _____/
-        \/`,
-	"elementary": `      _______
-    /         \
-   /  _______  \
-  |  /       \  |
-  |  \_______/  |
-   \           /
-    \_________/`,
-	"void": `       ______
-    .-'      '-.
-   /   .----.   \
-  |   /      \   |
-  |   \  __  /   |
-   \   '----'   /
-    '-.______.-'`,
-	"slackware": `   ___________
-  /  _______  \
- |  / _____ \  |
- | | / ___/ |  |
- | | \___ \ |  |
- |  \____/ /   |
-  \___________/`,
-	"rocky": `        /\
-       /  \
-      / /\ \
-     / /  \ \
-    / /    \ \
-   /_/ ROCKY\_\
-      LINUX`,
-	"alma": `      .-====-.
-    .'  .--.  '.
-   /   /    \   \
-  |   | ALMA |   |
-   \   \    /   /
-    '.  '--'  .'
-      '-====-'`,
-	"centos": `       \  |  /
-     ---  ◇  ---
-       /  |  \
-    ◇----+----◇
-       \  |  /
-     ---  ◇  ---
-       /  |  \`,
-	"garuda": `       ______
-    __/ ____ \__
-   /  /    \   \
-  /  / GARUDA\   \
-  \  \      /   /
-   \__\____/___/
-      \____/`,
-	"cachyos": `      _______
-    /  _____  \
-   /  /     \  \
-  |  |  C    |  |
-  |  |       |  |
-   \  \_____/  /
-    \_________/`,
 }
 
 func Logo(id string) []string {
-	logo, ok := logos[id]
-	if !ok {
-		logo = logos["tux"]
+	if logo, ok := customLogos[id]; ok {
+		return splitLogo(logo)
 	}
-	return strings.Split(strings.Trim(logo, "\n"), "\n")
+	data, err := logoFiles.ReadFile("ascii/" + id + ".txt")
+	if err != nil {
+		data, _ = logoFiles.ReadFile("ascii/tux.txt")
+	}
+	return splitLogo(string(data))
+}
+
+func splitLogo(value string) []string {
+	return strings.Split(strings.Trim(value, "\n"), "\n")
 }

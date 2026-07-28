@@ -60,5 +60,5 @@ if ! grep -q '^# >>> trustmefetch >>>$' "$ZSHRC"; then
 fi
 
 printf '\nInstalled trustmefetch. Open a new terminal, then ask:\n\n'
-printf '  you are a linux?\n\n'
+printf '  are you a linux?\n\n'
 printf 'Configure it with: trustmefetch config\n'

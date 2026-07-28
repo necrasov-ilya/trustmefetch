@@ -14,6 +14,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	cterm "github.com/charmbracelet/x/term"
 	"github.com/necrasov-ilya/trustmefetch/internal/config"
+	"github.com/necrasov-ilya/trustmefetch/internal/live"
 	"github.com/necrasov-ilya/trustmefetch/internal/render"
 	"github.com/necrasov-ilya/trustmefetch/internal/system"
 	"github.com/necrasov-ilya/trustmefetch/internal/theme"
@@ -33,7 +34,16 @@ func Run(args []string, version string, stdout, stderr io.Writer) error {
 
 	switch args[0] {
 	case "--question":
+		if cfg.Mode == "live" && writerIsTerminal(stdout) {
+			return runLive(cfg, "", stdout)
+		}
 		return printFetch(cfg, "", stdout)
+	case "live":
+		id := ""
+		if len(args) > 1 {
+			id = args[1]
+		}
+		return runLive(cfg, id, stdout)
 	case "config", "configure":
 		if !writerIsTerminal(stdout) {
 			return errors.New("config requires an interactive terminal")
@@ -63,6 +73,16 @@ func Run(args []string, version string, stdout, stderr io.Writer) error {
 		}
 		fmt.Fprintln(stdout, "Theme saved:", args[1])
 		return nil
+	case "mode":
+		if len(args) != 2 || (args[1] != "snapshot" && args[1] != "live") {
+			return errors.New("usage: trustmefetch mode <snapshot|live>")
+		}
+		cfg.Mode = args[1]
+		if err := config.Save(cfg); err != nil {
+			return err
+		}
+		fmt.Fprintln(stdout, "Question mode saved:", cfg.Mode)
+		return nil
 	case "preview":
 		id := cfg.Theme
 		if len(args) > 1 {
@@ -88,6 +108,23 @@ func Run(args []string, version string, stdout, stderr io.Writer) error {
 	default:
 		return fmt.Errorf("unknown command %q\n\n%s", args[0], usage)
 	}
+}
+
+func runLive(cfg config.Config, requested string, stdout io.Writer) error {
+	if !writerIsTerminal(stdout) {
+		return errors.New("live mode requires an interactive terminal")
+	}
+	id := cfg.Theme
+	if requested != "" {
+		id = requested
+	}
+	selected, ok := theme.ByID(id)
+	if !ok {
+		return fmt.Errorf("unknown theme %q; run trustmefetch themes", id)
+	}
+	program := tea.NewProgram(live.New(system.Collect(), selected, cfg.Animation))
+	_, err := program.Run()
+	return err
 }
 
 func printFetch(cfg config.Config, requested string, stdout io.Writer) error {
@@ -179,8 +216,10 @@ const usage = `trustmefetch — Trust me, it's Linux.
 Usage:
   trustmefetch                    Show the configured fetch
   trustmefetch config             Open the interactive theme picker
+  trustmefetch live [theme-id]    Open the live system view
   trustmefetch themes             List all themes
   trustmefetch theme <id>         Save a theme
+  trustmefetch mode <mode>        Set question mode: snapshot or live
   trustmefetch preview [id]       Preview a theme
   trustmefetch random             Pick and save a random theme
   trustmefetch doctor             Inspect the installation

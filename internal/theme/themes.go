@@ -1,7 +1,7 @@
 package theme
 
 var themes = []Theme{
-	{ID: "rgb-linux", Name: "100% LINUX!!!!!!", Distro: "RGB Linux", Logo: "linux", Primary: "#ff2bd6", Secondary: "#32e6ff", Accent: "#b6ff35", Tagline: "100% LINUX!!!!!! zero doubts detected", Desktop: "KDE Plasma ∞", Joke: true, Rainbow: true},
+	{ID: "rgb-linux", Name: "100% LINUX!!!!!!", Distro: "RGB Linux", Logo: "tux", Primary: "#ff2bd6", Secondary: "#32e6ff", Accent: "#b6ff35", Tagline: "100% LINUX!!!!!! zero doubts detected", Desktop: "KDE Plasma ∞", Joke: true, Rainbow: true},
 	{ID: "seriously-linux", Name: "Seriously Linux", Distro: "Seriously Linux", Logo: "tux", Primary: "#f7c948", Secondary: "#f4f4f5", Accent: "#ff6b6b", Tagline: "seriously. this is Linux. stop checking.", Desktop: "KDE Plasma 6 (seriously)", Joke: true},
 	{ID: "trust-me-bro", Name: "Trust Me Bro", Distro: "TrustMe Linux", Logo: "tux", Primary: "#8b5cf6", Secondary: "#e9d5ff", Accent: "#22d3ee", Tagline: "Trust me, it's Linux.", Desktop: "KDE Plasma 6", Joke: true},
 	{ID: "arch-btw", Name: "Arch BTW", Distro: "Arch Linux", Logo: "arch", Primary: "#1793d1", Secondary: "#e6f6ff", Accent: "#60a5fa", Tagline: "I use Arch on a Mac, btw.", Desktop: "KDE Plasma 6", Joke: true},
