@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/bits"
 	"os"
 	"os/exec"
 	"os/user"
@@ -31,9 +32,18 @@ type Info struct {
 	CPUUsage   string
 	GPU        string
 	Memory     string
+	Swap       string
 	Disk       string
 	Battery    string
 	Resolution string
+	WM         string
+	WMTheme    string
+	UITheme    string
+	Font       string
+	Cursor     string
+	LocalIP    string
+	Power      string
+	Locale     string
 }
 
 func Collect() Info {
@@ -52,9 +62,19 @@ func Collect() Info {
 		CPU:       sysctl("machdep.cpu.brand_string"),
 		CPUUsage:  cpuUsage(),
 		Memory:    memory(),
+		Swap:      swap(),
 		Disk:      disk(),
 		Battery:   battery(),
+		WM:        "Quartz Compositor",
+		WMTheme:   "Multicolor " + appearance(),
+		UITheme:   "Liquid Glass",
+		Font:      ".AppleSystemUIFont [System], Helvetica [User]",
+		Cursor:    "Fill - Black, Outline - White (32px)",
+		LocalIP:   localIP(),
+		Power:     powerAdapter(),
+		Locale:    localeName(),
 	}
+	info.Host, info.CPU = hardwareInfo(info.Host, info.CPU)
 	info.GPU, info.Resolution = displayInfo()
 	if info.CPU == "" {
 		info.CPU = runtime.GOARCH
@@ -69,8 +89,10 @@ func CollectDynamic(info Info) Info {
 	info.Uptime = uptime()
 	info.CPUUsage = cpuUsage()
 	info.Memory = memory()
+	info.Swap = swap()
 	info.Disk = disk()
 	info.Battery = battery()
+	info.LocalIP = localIP()
 	return info
 }
 
@@ -206,26 +228,48 @@ func memory() string {
 	}
 	pageSize := uint64(4096)
 	freePages := uint64(0)
+	speculativePages := uint64(0)
+	fileBackedPages := uint64(0)
 	for _, line := range strings.Split(command("vm_stat"), "\n") {
 		if strings.Contains(line, "page size of") {
 			if match := regexp.MustCompile(`page size of ([0-9]+) bytes`).FindStringSubmatch(line); len(match) == 2 {
 				pageSize, _ = strconv.ParseUint(match[1], 10, 64)
 			}
 		}
-		if strings.HasPrefix(line, "Pages free:") || strings.HasPrefix(line, "Pages inactive:") || strings.HasPrefix(line, "Pages speculative:") {
-			fields := strings.Fields(strings.TrimSuffix(line, "."))
-			if len(fields) > 0 {
-				value, _ := strconv.ParseUint(fields[len(fields)-1], 10, 64)
-				freePages += value
-			}
+		fields := strings.Fields(strings.TrimSuffix(line, "."))
+		if len(fields) == 0 {
+			continue
+		}
+		value, _ := strconv.ParseUint(fields[len(fields)-1], 10, 64)
+		switch {
+		case strings.HasPrefix(line, "Pages free:"):
+			freePages = value
+		case strings.HasPrefix(line, "Pages speculative:"):
+			speculativePages = value
+		case strings.HasPrefix(line, "File-backed pages:"):
+			fileBackedPages = value
 		}
 	}
-	available := freePages * pageSize
+	if speculativePages < freePages {
+		freePages -= speculativePages
+	}
+	available := (freePages + fileBackedPages) * pageSize
 	if available > total {
 		available = 0
 	}
 	used := total - available
 	return fmt.Sprintf("%.1f GiB / %.1f GiB", gib(used), gib(total))
+}
+
+func swap() string {
+	raw := sysctl("vm.swapusage")
+	match := regexp.MustCompile(`total = ([0-9.]+)M\s+used = ([0-9.]+)M`).FindStringSubmatch(raw)
+	if len(match) != 3 {
+		return "unknown"
+	}
+	total, _ := strconv.ParseFloat(match[1], 64)
+	used, _ := strconv.ParseFloat(match[2], 64)
+	return fmt.Sprintf("%.2f GiB / %.2f GiB", used/1024, total/1024)
 }
 
 func disk() string {
@@ -270,8 +314,109 @@ func displayInfo() (string, string) {
 		return "unknown", "unknown"
 	}
 	models := findStrings(value, "sppci_model")
-	resolutions := findStrings(value, "_spdisplays_resolution")
-	return firstOr(models, "unknown"), firstOr(resolutions, "unknown")
+	gpu := firstOr(models, "unknown")
+	if cores := firstOr(findStrings(value, "sppci_cores"), ""); cores != "" {
+		gpu += " (" + cores + " cores)"
+	}
+	displays := findMapsWithKey(value, "_spdisplays_pixels")
+	if len(displays) == 0 {
+		return gpu, "unknown"
+	}
+	display := displays[0]
+	name := stringValue(display, "_name")
+	pixels := strings.ReplaceAll(stringValue(display, "_spdisplays_pixels"), " ", "")
+	scaled := stringValue(display, "_spdisplays_resolution")
+	connection := "External"
+	if stringValue(display, "spdisplays_connection_type") == "spdisplays_internal" {
+		connection = "Built-in"
+	}
+	resolution := pixels
+	if scaled != "" {
+		resolution += " (" + scaled + ")"
+	}
+	if name != "" {
+		resolution = name + ": " + resolution
+	}
+	return gpu, resolution + " [" + connection + "]"
+}
+
+func hardwareInfo(fallbackHost, fallbackCPU string) (string, string) {
+	raw := command("system_profiler", "SPHardwareDataType", "-json")
+	if raw == "" {
+		return fallbackHost, fallbackCPU
+	}
+	var value any
+	if json.Unmarshal([]byte(raw), &value) != nil {
+		return fallbackHost, fallbackCPU
+	}
+	items := findMapsWithKey(value, "machine_model")
+	if len(items) == 0 {
+		return fallbackHost, fallbackCPU
+	}
+	item := items[0]
+	model := stringValue(item, "machine_model")
+	name := stringValue(item, "machine_name")
+	host := fallbackHost
+	if name != "" && model != "" {
+		host = name + " (" + model + ")"
+	}
+	cpu := fallbackCPU
+	if layout := stringValue(item, "number_processors"); layout != "" {
+		match := regexp.MustCompile(`proc [0-9]+:([0-9]+):([0-9]+)`).FindStringSubmatch(layout)
+		if len(match) == 3 {
+			cpu += " (" + match[1] + "+" + match[2] + ")"
+		}
+	}
+	return host, cpu
+}
+
+func localIP() string {
+	route := command("route", "-n", "get", "default")
+	match := regexp.MustCompile(`(?m)^\s*interface:\s+(\S+)`).FindStringSubmatch(route)
+	if len(match) != 2 {
+		return "unknown"
+	}
+	name := match[1]
+	configuration := command("ifconfig", name)
+	inet := regexp.MustCompile(`(?m)^\s*inet\s+(\S+)\s+netmask\s+(0x[0-9a-fA-F]+)`).FindStringSubmatch(configuration)
+	if len(inet) != 3 {
+		return "unknown"
+	}
+	mask, _ := strconv.ParseUint(strings.TrimPrefix(inet[2], "0x"), 16, 32)
+	prefix := bits.OnesCount32(uint32(mask))
+	return fmt.Sprintf("%s/%d (%s)", inet[1], prefix, name)
+}
+
+func powerAdapter() string {
+	raw := command("system_profiler", "SPPowerDataType", "-json")
+	if raw == "" {
+		return "not connected"
+	}
+	var value any
+	if json.Unmarshal([]byte(raw), &value) != nil {
+		return "unknown"
+	}
+	items := findMapsWithKey(value, "sppower_ac_charger_name")
+	if len(items) == 0 {
+		return "not connected"
+	}
+	return stringValue(items[0], "sppower_ac_charger_name")
+}
+
+func appearance() string {
+	if command("defaults", "read", "-g", "AppleInterfaceStyle") == "Dark" {
+		return "Dark"
+	}
+	return "Light"
+}
+
+func localeName() string {
+	for _, key := range []string{"LC_ALL", "LC_MESSAGES", "LANG"} {
+		if value := os.Getenv(key); value != "" {
+			return value
+		}
+	}
+	return "unknown"
 }
 
 func findStrings(value any, key string) []string {
@@ -296,6 +441,39 @@ func findStrings(value any, key string) []string {
 	}
 	walk(value)
 	return found
+}
+
+func findMapsWithKey(value any, key string) []map[string]any {
+	var found []map[string]any
+	var walk func(any)
+	walk = func(node any) {
+		switch node := node.(type) {
+		case map[string]any:
+			if _, ok := node[key]; ok {
+				found = append(found, node)
+			}
+			for _, child := range node {
+				walk(child)
+			}
+		case []any:
+			for _, child := range node {
+				walk(child)
+			}
+		}
+	}
+	walk(value)
+	return found
+}
+
+func stringValue(value map[string]any, key string) string {
+	switch item := value[key].(type) {
+	case string:
+		return item
+	case float64:
+		return strconv.FormatFloat(item, 'f', -1, 64)
+	default:
+		return ""
+	}
 }
 
 func firstOr(values []string, fallback string) string {

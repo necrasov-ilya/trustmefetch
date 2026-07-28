@@ -33,7 +33,6 @@ func Fetch(selected theme.Theme, info system.Info, options Options) string {
 		label := primary.Render(row[0])
 		data = append(data, label+accent.Render(": ")+secondary.Render(row[1]))
 	}
-	data = append(data, "", accent.Render(selected.Tagline))
 	if options.Color {
 		data = append(data, "", colorBar(false), colorBar(true))
 	}
@@ -74,37 +73,23 @@ func dataRows(selected theme.Theme, info system.Info) [][2]string {
 		{"Packages", info.Packages},
 		{"Shell", info.Shell},
 		{"Display", info.Resolution},
-		{"Desktop", selected.Desktop},
+		{"WM", info.WM},
+		{"WM Theme", info.WMTheme},
+		{"Theme", selected.Desktop + " / " + info.UITheme},
+		{"Font", info.Font},
+		{"Cursor", info.Cursor},
 		{"Terminal", info.Terminal},
 		{"CPU", info.CPU},
-		{"CPU Usage", info.CPUUsage},
 		{"GPU", info.GPU},
 		{"Memory", info.Memory},
+		{"Swap", info.Swap},
 		{"Disk", info.Disk},
+		{"Local IP", info.LocalIP},
 		{"Battery", info.Battery},
-		{"Evidence", "macOS " + info.OSVersion + " (build " + info.Build + ")"},
-	}
-	if selected.Joke {
-		rows = append(rows, [2]string{"Verdict", verdict(selected.ID)})
+		{"Power Adapter", info.Power},
+		{"Locale", info.Locale},
 	}
 	return rows
-}
-
-func verdict(id string) string {
-	switch id {
-	case "rgb-linux":
-		return "100% LINUX!!!!!! 0% reasonable doubt"
-	case "seriously-linux":
-		return "seriously Linux. seriously."
-	case "sudo-believe":
-		return "permission granted to believe"
-	case "macos-who":
-		return "macOS? never heard of it"
-	case "kernel-of-truth":
-		return "close enough for a terminal screenshot"
-	default:
-		return "yes. trust me."
-	}
 }
 
 func colorLogo(lines []string, selected theme.Theme, options Options) []string {

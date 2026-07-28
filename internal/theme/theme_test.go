@@ -22,5 +22,8 @@ func TestThemeCatalog(t *testing.T) {
 		if !item.Joke && len(Logo(item.Logo)) < 10 {
 			t.Fatalf("distro theme %s uses a reduced logo", item.ID)
 		}
+		if item.Joke && len(Logo(item.Logo)) < 12 {
+			t.Fatalf("joke theme %s uses a reduced logo", item.ID)
+		}
 	}
 }

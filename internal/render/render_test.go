@@ -1,6 +1,7 @@
 package render
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
@@ -15,6 +16,29 @@ func TestFetchUsesCollectedValues(t *testing.T) {
 		if !strings.Contains(output, expected) {
 			t.Fatalf("output does not contain %q:\n%s", expected, output)
 		}
+	}
+}
+
+func TestDataRowsMatchFastfetchMacOSDefaultModules(t *testing.T) {
+	rows := dataRows(theme.Must("rgb-linux"), system.Info{})
+	labels := make([]string, len(rows))
+	for index, row := range rows {
+		labels[index] = row[0]
+	}
+	want := []string{
+		"OS", "Host", "Kernel", "Uptime", "Packages", "Shell", "Display",
+		"WM", "WM Theme", "Theme", "Font", "Cursor", "Terminal", "CPU", "GPU",
+		"Memory", "Swap", "Disk", "Local IP", "Battery", "Power Adapter", "Locale",
+	}
+	if !reflect.DeepEqual(labels, want) {
+		t.Fatalf("module order differs from fastfetch:\ngot  %v\nwant %v", labels, want)
+	}
+}
+
+func TestColoredFetchHasFastfetchDefaultLineCount(t *testing.T) {
+	output := Fetch(theme.Must("rgb-linux"), system.Info{}, Options{Width: 200, Color: true})
+	if got, want := strings.Count(output, "\n"), 27; got != want {
+		t.Fatalf("got %d output lines, want %d", got, want)
 	}
 }
 
